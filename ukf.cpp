@@ -517,17 +517,9 @@ float UKF::angleNormalize(float x)
 {
     //    while (x> M_PI) x-=2.*M_PI;
     //    while (x<-M_PI) x+=2.*M_PI;
-
     if (fabs(x) > M_PI)
     {
         x -= round(x / (2.0 * M_PI)) * (2.0 * M_PI);
     }
-
-    //    if(x > M_PI){
-    //        x = (int(x - M_PI)%int(2*M_PI)) - M_PI;
-    //    }
-    //    if(x < -M_PI){
-    //        x = (int(x + M_PI)%int(2*M_PI)) + M_PI;
-    //    }
     return x;
 }
