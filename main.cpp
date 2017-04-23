@@ -242,7 +242,7 @@ int main(int argc, char* argv[]) {
     ground_truth.push_back(gt_pack_list[k].gt_values_);
 
   }
-//  cout << "NIS > 7.815 : " << 100*numerator/demonimator << endl;
+  cout << "NIS > 7.815 : " << 100*numerator/demonimator << endl;
 
   // compute the accuracy (RMSE)
   Tools tools;

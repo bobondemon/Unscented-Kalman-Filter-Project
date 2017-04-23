@@ -34,10 +34,10 @@ UKF::UKF() {
     P_ = MatrixXd(5, 5);
 
     // Process noise standard deviation longitudinal acceleration in m/s^2
-    std_a_ = 2.4;   // Need to tuning (ninety-five percent of the time)
+    std_a_ = .55;   // Need to tuning (ninety-five percent of the time)
 
     // Process noise standard deviation yaw acceleration in rad/s^2
-    std_yawdd_ = .6;   // Need to tuning (ninety-five percent of the time)
+    std_yawdd_ = .55;   // Need to tuning (ninety-five percent of the time)
 
     // Laser measurement noise standard deviation position1 in m
     std_laspx_ = 0.15;
@@ -65,19 +65,13 @@ UKF::UKF() {
     n_x_ = 5;
     n_aug_= 7;
     lambda_ = 3 - n_aug_;
-    // NIS_radar_? and NIS_laser_?
     // Init P_
     // [pos1 pos2 vel_abs yaw_angle yaw_rate]
-//    P_ << 1., 0, 0, 0, 0,
-//            0, 1, 0, 0, 0,
-//            0, 0, 1, 0, 0,
-//            0, 0, 0, 1, 0,
-//            0, 0, 0, 0, 1;
-    P_ << .5, 0, 0, 0, 0,
-            0, .5, 0, 0, 0,
-            0, 0, .25, 0, 0,
-            0, 0, 0, .25, 0,
-            0, 0, 0, 0, .25;
+    P_ << .05, 0, 0, 0, 0,
+            0, .05, 0, 0, 0,
+            0, 0, .6, 0, 0,
+            0, 0, 0, 1.15, 0,
+            0, 0, 0, 0, .15;
     // x_ will be initialized in ProcessMeasurement() based on reading sensor data
     // Init Xsig_pred_
     Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
@@ -127,9 +121,8 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
             Convert radar from polar to CTRV coordinates.
             */
             float rho = meas_package.raw_measurements_(0);
-            float theta = meas_package.raw_measurements_(1);
-            theta=-theta;
-            x_ << cos(theta)*rho, sin(theta)*rho, abs(meas_package.raw_measurements_(2)), theta+M_PI/2, 0;
+            float phi = meas_package.raw_measurements_(1);
+            x_ << sin(phi)*rho, cos(phi)*rho, abs(meas_package.raw_measurements_(2)), -phi+M_PI/2, 0;
         }
         else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
             /**
@@ -140,6 +133,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
         // Avoid initializing nonsence data
         if (x_[0] < MIN_SENSOR_VALUE && x_[1] < MIN_SENSOR_VALUE)
         {
+            std::cout << "Avoid initializing nonsence data\n";
             return;
         }
 
@@ -248,12 +242,11 @@ void UKF::Prediction(double delta_t) {
         //        // [Normalize]?
         //        Xsig_pred_(3,i) = angleNormalize(Xsig_pred_(3,i);
         Xsig_pred_(4,i) = yawd_p;
-
-        if (delta_t>=0.0001)
-        {
-            // x_ and P_ become new predicted values
-            PredictMeanAndCovarianceStateSpace();
-        }
+    }
+    if (delta_t>=0.0001)
+    {
+        // x_ and P_ become new predicted values
+        PredictMeanAndCovarianceStateSpace();
     }
 }
 
@@ -270,12 +263,12 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 
   You'll also need to calculate the lidar NIS.
   */
-    float min_sensor_value_ = 0.0001;
+    float min_sensor_value_ = 0.000001;
     // processing nonsense data (both data are too small)
-    if (x_(0)<=min_sensor_value_ && x_(1)<=min_sensor_value_)
+    if (fabs(x_(0))<=min_sensor_value_ && fabs(x_(1))<=min_sensor_value_)
     {
-        x_(0) = min_sensor_value_;
-        x_(1) = min_sensor_value_;
+        x_(0) = (x_(0)<0)?-min_sensor_value_:min_sensor_value_;
+        x_(1) = (x_(1)<0)?-min_sensor_value_:min_sensor_value_;
     }
 
     // measurement matrix
@@ -419,8 +412,10 @@ void UKF::PredictRadarMeasurement(Eigen::VectorXd *z_mean_out, Eigen::MatrixXd *
         double v  = Xsig_pred_(2,i);
         double yaw = Xsig_pred_(3,i);
         // avoid numerical issue ??
-        p_x = (fabs(p_x)<=MIN_SENSOR_VALUE) ? MIN_SENSOR_VALUE : p_x;
-        p_y = (fabs(p_y)<=MIN_SENSOR_VALUE) ? MIN_SENSOR_VALUE : p_y;
+        if (fabs(p_x)<=MIN_SENSOR_VALUE)
+            p_x = (p_x<0)?-MIN_SENSOR_VALUE:MIN_SENSOR_VALUE;
+        if (fabs(p_y)<=MIN_SENSOR_VALUE)
+            p_y = (p_y<0)?-MIN_SENSOR_VALUE:MIN_SENSOR_VALUE;
         //        //angle normalization?
         //        yaw = angleNormalize(yaw);
 
@@ -515,8 +510,8 @@ void UKF::UpdateStateRadar(const VectorXd &z_pred, const MatrixXd &S, const Matr
 
 float UKF::angleNormalize(float x)
 {
-    //    while (x> M_PI) x-=2.*M_PI;
-    //    while (x<-M_PI) x+=2.*M_PI;
+//    while (x> M_PI) x-=2.*M_PI;
+//    while (x<-M_PI) x+=2.*M_PI;
     if (fabs(x) > M_PI)
     {
         x -= round(x / (2.0 * M_PI)) * (2.0 * M_PI);
