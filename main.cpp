@@ -190,6 +190,14 @@ int main(int argc, char* argv[]) {
     out_file_ << gt_pack_list[k].gt_values_(2) << "\t";
     out_file_ << gt_pack_list[k].gt_values_(3) << "\t";
 
+    // output the NIS values
+    if (measurement_pack_list[k].sensor_type_ == MeasurementPackage::LASER) {
+      out_file_ << ukf.NIS_laser_ << "\n";
+    } else if (measurement_pack_list[k].sensor_type_ == MeasurementPackage::RADAR) {
+      out_file_ << ukf.NIS_radar_ << "\n";
+    }
+
+
     // convert ukf x vector to cartesian to compare to ground truth
     VectorXd ukf_x_cartesian_ = VectorXd(4);
 
