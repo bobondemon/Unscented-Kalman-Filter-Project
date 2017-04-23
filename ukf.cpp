@@ -8,17 +8,12 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using std::vector;
 
-ofstream ofs("debug.txt");
-
 #define MIN_SENSOR_VALUE    0.000001
 
 /**
  * Initializes Unscented Kalman filter
  */
 UKF::UKF() {
-    if (!ofs)
-        return;
-
     is_initialized_ = false;
 
     // if this is false, laser measurements will be ignored (except during init)
@@ -88,7 +83,6 @@ UKF::UKF() {
 }
 
 UKF::~UKF() {
-    ofs.close();
 }
 
 /**
@@ -295,11 +289,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     MatrixXd I = MatrixXd::Identity(x_size, x_size);
     P_ = (I - K * H_) * P_;
 
-    ofs<<"Lidar Update x_ = "<< x_ << "\nP_ = \n"<<P_ << std::endl; //[P_]
-    //    std::cout<<"Lidar Update P_ = \n"<<P_ << std::endl; //[P_]
-
     NIS_laser_ = y.transpose()*Si*y;
-    int tmp=0;
 }
 
 /**
@@ -390,9 +380,6 @@ void UKF::PredictMeanAndCovarianceStateSpace()
     //write result
     x_ = x;
     P_ = P;
-    ofs<<"State space recurtion Prediction:\nx_="<<x<<"\nP_="<<P_ << std::endl; //[P_]
-    //    std::cout<<P_ << std::endl; //[P_]
-    int tmp=0;
 }
 
 void UKF::PredictRadarMeasurement(Eigen::VectorXd *z_mean_out, Eigen::MatrixXd *S_out, Eigen::MatrixXd *Zsig_out)
@@ -500,12 +487,9 @@ void UKF::UpdateStateRadar(const VectorXd &z_pred, const MatrixXd &S, const Matr
     x_(3) = angleNormalize(x_(3));
 
     P_ = P_ - K*S*K.transpose();
-    ofs<<"Radar Update x_ = "<<x_<<"\nP_ = \n"<<P_ << std::endl; //[P_]
-    //    std::cout<<"Radar Update P_ = \n"<<P_ << std::endl; //[P_]
 
     // Calculate the NIS
     NIS_radar_ = z_diff.transpose()*Si*z_diff;
-    int tmp=0;
 }
 
 float UKF::angleNormalize(float x)

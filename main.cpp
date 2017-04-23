@@ -26,7 +26,7 @@ void check_arguments(int argc, char* argv[]) {
     cerr << usage_instructions << endl;
   } else if (argc == 2) {
     cerr << "Please include an output file.\n" << usage_instructions << endl;
-  } else if (argc == 3 || argc == 5) {
+  } else if (argc == 3) {
     has_valid_args = true;
   } else if (argc > 3) {
     cerr << "Too many arguments.\n" << usage_instructions << endl;
@@ -52,10 +52,6 @@ void check_files(ifstream& in_file, string& in_name,
 
 int main(int argc, char* argv[]) {
 
-    // [Debug]
-    float numerator=0., demonimator=0.;
-    double std_a, std_yawdd;
-    // [Debug]: temporary comment out
   check_arguments(argc, argv);
 
   string in_file_name_ = argv[1];
@@ -63,19 +59,6 @@ int main(int argc, char* argv[]) {
 
   string out_file_name_ = argv[2];
   ofstream out_file_(out_file_name_.c_str(), ofstream::out);
-
-  if (argc==5)
-  {
-      // [Debug]
-      string std_a_str = argv[3];
-      string std_yawdd_str = argv[4];
-      istringstream iss;
-      iss.str(std_a_str);
-      iss >> std_a;
-      iss.clear();
-      iss.str(std_yawdd_str);
-      iss >> std_yawdd;
-  }
 
   check_files(in_file_, in_file_name_, out_file_, out_file_name_);
 
@@ -148,12 +131,6 @@ int main(int argc, char* argv[]) {
 
   // Create a UKF instance
   UKF ukf;
-  // [Debug]
-  if (argc==5)
-  {
-      ukf.std_a_=std_a;
-      ukf.std_yawdd_=std_yawdd;
-  }
 
   // used to compute the RMSE later
   vector<VectorXd> estimations;
@@ -181,7 +158,6 @@ int main(int argc, char* argv[]) {
 
   for (size_t k = 0; k < number_of_measurements; ++k) {
     // Call the UKF-based fusion
-//      std::cout << "k=" << k << std::endl;
     ukf.ProcessMeasurement(measurement_pack_list[k]);
 
     // output the estimation
@@ -214,20 +190,6 @@ int main(int argc, char* argv[]) {
     out_file_ << gt_pack_list[k].gt_values_(2) << "\t";
     out_file_ << gt_pack_list[k].gt_values_(3) << "\t";
 
-    // output the NIS values
-    // [Debug]
-    demonimator++;
-    if (measurement_pack_list[k].sensor_type_ == MeasurementPackage::LASER) {
-      out_file_ << ukf.NIS_laser_ << "\n";
-      if (ukf.NIS_laser_>7.815)
-          numerator++;
-    } else if (measurement_pack_list[k].sensor_type_ == MeasurementPackage::RADAR) {
-      out_file_ << ukf.NIS_radar_ << "\n";
-      if (ukf.NIS_radar_>7.815)
-          numerator++;
-    }
-
-
     // convert ukf x vector to cartesian to compare to ground truth
     VectorXd ukf_x_cartesian_ = VectorXd(4);
 
@@ -242,17 +204,10 @@ int main(int argc, char* argv[]) {
     ground_truth.push_back(gt_pack_list[k].gt_values_);
 
   }
-  cout << "NIS > 7.815 : " << 100*numerator/demonimator << endl;
 
   // compute the accuracy (RMSE)
   Tools tools;
-  if (argc==5)
-  {
-      cout << std_a << endl << std_yawdd << endl;
-      cout << tools.CalculateRMSE(estimations, ground_truth) << endl;
-  }
-  else
-      cout << "Accuracy - RMSE:" << endl << tools.CalculateRMSE(estimations, ground_truth) << endl;
+  cout << "Accuracy - RMSE:" << endl << tools.CalculateRMSE(estimations, ground_truth) << endl;
 
   // close files
   if (out_file_.is_open()) {
