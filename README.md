@@ -15,6 +15,10 @@ I got
 | 0.398697      | 0.40 |
 | 0.207379      | 0.30 |
 
+Here is the results:
+You can see the true and predicted coordinates are almost the same.
+<img src="result.png" width=80% height=80%>
+
 ---
 ### 2. Algorithm-1
 
